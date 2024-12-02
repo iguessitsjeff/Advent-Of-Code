@@ -1,4 +1,4 @@
-package main
+package days
 
 import (
 	"bufio"
@@ -11,16 +11,7 @@ import (
 	"sync"
 )
 
-// must be in the first 50 places they look
-// location ID
-
-func main() {
-	file, err := os.Open("input.txt")
-
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+func Day1(file *os.File, part int) {
 
 	var left []int
 	var right []int
@@ -50,7 +41,12 @@ func main() {
 	var total int
 	for i := range left {
 		wg.Add(1)
-		go ComputePart2(left[i], right, ch, &wg)
+		switch part {
+		case 1:
+			go computeDay1Part1(left[i], right[i], ch, &wg)
+		case 2:
+			go computeDay1Part2(left[i], right, ch, &wg)
+		}
 	}
 
 	go func() {
@@ -65,12 +61,12 @@ func main() {
 	fmt.Println(total)
 }
 
-func ComputePart1(leftNum int, rightNum int, ch chan int, wg *sync.WaitGroup) {
+func computeDay1Part1(leftNum int, rightNum int, ch chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	ch <- int(math.Abs(float64(leftNum) - float64(rightNum)))
 }
 
-func ComputePart2(leftNum int, right []int, ch chan int, wg *sync.WaitGroup) {
+func computeDay1Part2(leftNum int, right []int, ch chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var idx int = -1
 
