@@ -4,21 +4,16 @@ import (
 	"bufio"
 	"fmt"
 	"math"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 )
 
-func Day1(file *os.File, part int) {
+func Day1(scanner *bufio.Scanner, part int) {
 
 	var left []int
 	var right []int
-
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-
 	for scanner.Scan() {
 		line := scanner.Text()
 		content := strings.Split(line, "   ")
