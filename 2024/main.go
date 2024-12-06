@@ -28,6 +28,8 @@ func main() {
 		days.Day2(scanner, *part)
 	case 3:
 		days.Day3(scanner, *part)
+	case 4:
+		days.Day4(scanner, *part)
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("Time taken: %s\n", elapsed)

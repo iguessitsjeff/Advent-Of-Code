@@ -3,115 +3,128 @@ package days
 import (
 	"bufio"
 	"fmt"
-	"os"
-	"regexp"
+	"math"
 	"strconv"
-	"time"
+	"strings"
+	"sync"
 )
 
-func Day2(file *os.File, part int) {
-	start := time.Now()
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	switch part {
-	case 1:
-		computeDay2Part1(scanner)
-	case 2:
-		computeDay2Part2(scanner)
+func Day2(scanner *bufio.Scanner, part int) {
+	var wg sync.WaitGroup
+	var ch chan int = make(chan int)
+	var total int
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch part {
+		case 1:
+			wg.Add(1)
+			go computeDay2Part1(line, ch, &wg)
+		case 2:
+			wg.Add(1)
+			go computeDay2Part2(line, ch, &wg)
+		}
 	}
-	elapsed := time.Since(start)
-	fmt.Printf("Time taken: %s\n", elapsed)
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for num := range ch {
+		total += num
+	}
+
+	fmt.Println(total)
 
 }
 
-func computeDay2Part1(scanner *bufio.Scanner) {
-	var total int
+func computeDay2Part1(line string, ch chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	re := regexp.MustCompile(`Game (?P<ID>\d+):(?P<Games>.*)`)
-	gre := regexp.MustCompile(`(?P<Amount>\d+) (?P<Color>[red|green|blue]+)`)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
+	var safe = 1
+	var increasing = false
+	var decreasing = false
+	vals := strings.Split(line, " ")
+	prev, _ := strconv.Atoi(vals[0])
 
-		var red int
-		var green int
-		var blue int
+	for _, val := range vals[1:] {
+		curr, _ := strconv.Atoi(val)
+		change := prev - curr
 
-		idx := re.SubexpIndex("ID")
-		gdx := re.SubexpIndex("Games")
-
-		id, _ := strconv.Atoi(matches[idx])
-		colors := matches[gdx]
-		colorMatches := gre.FindAllStringSubmatch(colors, -1)
-
-		adx := gre.SubexpIndex("Amount")
-		cdx := gre.SubexpIndex("Color")
-
-		for _, match := range colorMatches {
-			amount, _ := strconv.Atoi(match[adx])
-			color := match[cdx]
-			switch color {
-			case "red":
-				if amount > red {
-					red = amount
-				}
-			case "blue":
-				if amount > blue {
-					blue = amount
-				}
-			case "green":
-				if amount > green {
-					green = amount
-				}
-			}
+		if !decreasing && change < 0 {
+			decreasing = true
 		}
-		if red < 13 && green < 14 && blue < 15 {
-			total += id
+		if !increasing && change > 0 {
+			increasing = true
 		}
+
+		change = int(math.Abs(float64(change)))
+
+		if change > 3 || change < 1 {
+			safe = 0
+			break
+		}
+
+		if increasing && decreasing {
+			safe = 0
+			break
+		}
+		prev = curr
 	}
-	fmt.Println(total)
+
+	ch <- safe
+
 }
 
-func computeDay2Part2(scanner *bufio.Scanner) {
-	var total int
+func computeDay2Part2(line string, ch chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	re := regexp.MustCompile(`Game (?P<ID>\d+):(?P<Games>.*)`)
-	gre := regexp.MustCompile(`(?P<Amount>\d+) (?P<Color>[red|green|blue]+)`)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
+	var safe = 1
 
-		var red int
-		var green int
-		var blue int
+	var skip = false
 
-		gdx := re.SubexpIndex("Games")
-		colors := matches[gdx]
-		colorMatches := gre.FindAllStringSubmatch(colors, -1)
+	var increasing = false
+	var decreasing = false
 
-		adx := gre.SubexpIndex("Amount")
-		cdx := gre.SubexpIndex("Color")
+	vals := strings.Split(line, " ")
+	prev, _ := strconv.Atoi(vals[0])
 
-		for _, match := range colorMatches {
-			amount, _ := strconv.Atoi(match[adx])
-			color := match[cdx]
-			switch color {
-			case "red":
-				if amount > red {
-					red = amount
-				}
-			case "blue":
-				if amount > blue {
-					blue = amount
-				}
-			case "green":
-				if amount > green {
-					green = amount
-				}
+	for _, val := range vals[1:] {
+		curr, _ := strconv.Atoi(val)
+		distance := prev - curr
+
+		if !decreasing && distance < 0 {
+			decreasing = true
+		}
+		if !increasing && distance > 0 {
+			increasing = true
+		}
+
+		change := int(math.Abs(float64(distance)))
+
+		if change > 3 || change < 1 {
+			if !skip {
+				skip = true
+				continue
 			}
 
+			safe = 0
+			break
 		}
-		total += red * green * blue
+
+		if increasing && decreasing {
+			if !skip {
+
+				skip = true
+			}
+
+			safe = 0
+			break
+		}
+		prev = curr
 	}
-	fmt.Println(total)
+
+	ch <- safe
+
 }
